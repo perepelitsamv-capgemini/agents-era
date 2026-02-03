@@ -11,4 +11,5 @@ dependencies = [
     "llama-index-llms-openai-like>=0.1.10",
     "python-dotenv>=1.2.1",
     "llama-index-llms-openai>=0.6.16",
+    "streamlit>=1.53.1",
 ]

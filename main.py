@@ -1,6 +1,7 @@
 import os
 import json
 from dotenv import load_dotenv
+import streamlit as st
 from rag import get_query_engine, get_collection
 
 load_dotenv()
@@ -45,10 +46,58 @@ def get_candidates() -> list[dict]:
 	
 	return candidates
 
-def main():
-	candidates = get_candidates()
+def render_candidates():
+	query_engine = get_query_engine()
 
-	print(f"Response: {candidates}")
+	with st.spinner("Fetching candidates..."):
+		candidates = get_candidates()
+
+	for idx, candidate in enumerate(candidates):
+		with st.container(border=True):
+			st.subheader(f"{candidate['name']} — {candidate['profession']}")
+			st.caption(f"Experience: {candidate['experience_in_years']} years")
+			st.markdown(candidate['summary'])
+			
+			# Use unique key for each candidate
+			expander_key = f"details_{idx}"
+			expander_data_key = f"details_data_{idx}"
+			
+			# Initialize session state for this expander
+			if expander_key not in st.session_state:
+				st.session_state[expander_key] = False
+			
+			if expander_data_key not in st.session_state:
+				st.session_state[expander_data_key] = None
+			
+			# Button to toggle details
+			if st.button(f"Toggle Details", key=f"btn_{idx}"):
+				st.session_state[expander_key] = not st.session_state[expander_key]
+			
+			# Only execute query if details are shown
+			if st.session_state[expander_key]:
+				if st.session_state[expander_data_key] is None:
+					with st.spinner("Fetching details..."):
+						data = query_engine.query(f"""
+							Provide detailed information about the candidate {candidate['name']} based on the resumes stored in the knowledge base.
+							Focus on key achievements, skills, and experiences that highlight their qualifications for potential job opportunities.
+							Skip name as it is already provided.
+							Keep markdown format for better readability.
+							Use smallest headings and bullet points where appropriate.
+						""")
+						st.session_state[expander_data_key] = data
+				st.markdown(st.session_state[expander_data_key])
+
+def main():
+	st.set_page_config(page_title="🚀 Candidates Resume Explorer", layout="wide")
+
+	render_candidates()
+	
+
+	with st.sidebar:
+		st.header("Candidates")
+		st.markdown("This application showcases candidate resumes extracted from a knowledge base using RAG architecture.")
+
+		
 
 if __name__ == "__main__":
     main()
