@@ -72,7 +72,7 @@ def populate():
 
 	print(f"Knowledge base populated. {index.index_id} created with {len(nodes)} nodes.")
 
-def get_query_engine(top_k=5) -> BaseQueryEngine:
+def get_query_engine(top_k=2) -> BaseQueryEngine:
 	vector_store = get_vector_store()
 	embed_model = get_embed_model()
 	index = VectorStoreIndex.from_vector_store(
