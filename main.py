@@ -4,6 +4,7 @@ import asyncio
 import streamlit as st
 from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
+from llama_index.tools.tavily_research import TavilyToolSpec
 from dotenv import load_dotenv
 from rag import get_query_engine
 
@@ -12,6 +13,11 @@ load_dotenv()
 RETRIEVE_CANDIDATES_CACHE_FILE = os.getenv("RETRIEVE_CANDIDATES_CACHE_FILE")
 MODEL = os.getenv("MODEL")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+
+tavily_tool = TavilyToolSpec(api_key=TAVILY_API_KEY)
+search_tools = tavily_tool.to_tool_list()
 
 def retrieve_candidates() -> list[dict]:
 	response = get_query_engine(top_k=30).query("""
@@ -53,21 +59,65 @@ def get_candidates() -> list[dict]:
 	
 	return candidates
 
+def candidates_retrieve_data_tool(query: str) -> str:
+	"""
+	Retrieve information about candidates based on the query from knowledge base.
+
+	"""
+	print(f"candidates_retrieve_data_tool called with query: {query}")
+
+	response = get_query_engine(top_k=5).query(query)
+
+	print(f"candidates_retrieve_data_tool response: {str(response)}")	
+	
+	return str(response)
+
 def get_chat_agent() -> FunctionAgent:
 	llm = OpenAI(
 		model=MODEL,
 		api_key=OPENAI_API_KEY,
-		temperature=1
+		temperature=1,
 	)
 
 	chat_agent = FunctionAgent(  
     llm=llm,
+		tools=[candidates_retrieve_data_tool] + search_tools,
     system_prompt="""
-			You are an AI assistant helping to extract information from resumes stored in a knowledge base.
+			You are a recruitment assistant AI specializing in candidate analysis and recruitment insights.
+			Your primary responsibility is to help users find and evaluate candidates from a resume database and provide relevant professional information.
+
+			TOOL USAGE GUIDELINES:
+			- Use the candidates_retrieve_data_tool FIRST for all candidate-related queries (names, experience, skills, qualifications)
+			- Use web search tools only for external references, industry information, current market data or real-time information.
+			- Prioritize accuracy from the local resume database over general web information
+
+			RESPONSE GUIDELINES:
+			- Be specific and factual when discussing candidates
+			- Include relevant qualifications, experience, and skills from resumes
+			- Format responses clearly with bullet points for multiple candidates
+			- If information isn't available in the resume database, clearly state that
+			- Keep responses focused and professional
 		""",
+		verbose=True
 	)
 
 	return chat_agent
+
+def get_contexual_chat_input(chat_input: str, N = 10) -> str:
+	# Build context from last N messages (e.g., last 10 messages)
+	N = 10
+	recent_messages = st.session_state.messages[-(N+1):-1] if len(st.session_state.messages) > 1 else []
+	
+	contexual_chat_input = ""
+	if recent_messages:
+		contexual_chat_input = "Previous conversation:\n"
+		for msg in recent_messages:
+			contexual_chat_input += f"{msg['role'].capitalize()}: {msg['content']}\n"
+		contexual_chat_input += f"\nCurrent message: {chat_input}"
+	else:
+		contexual_chat_input = chat_input
+	
+	return contexual_chat_input
 
 async def render_candidates() -> None:
 	query_engine = get_query_engine()
@@ -136,7 +186,8 @@ async def render_chat() -> None:
 			with chat_container.chat_message("assistant"):
 				with st.spinner("Thinking..."):
 						# Get the response from the chat agent
-						response = await chat_agent.run(chat_input)
+						contexual_chat_input = get_contexual_chat_input(chat_input=chat_input)
+						response = await chat_agent.run(contexual_chat_input)
 						response_str = str(response)
 						# Show the final response
 						st.write(response_str)
@@ -147,8 +198,7 @@ async def render_chat() -> None:
 			"""
 			<style>
 				[data-testid="stSidebar"] {
-            min-width: 500px;
-            max-width: 500px;
+            width: 400px;
         }
 				[data-testid="stSidebarCollapseButton"] {
             display: none;
@@ -179,7 +229,8 @@ async def render_chat() -> None:
 				div > 
 				[data-testid="stVerticalBlock"] > 
 				[data-testid="stLayoutWrapper"] {
-					flex: 1;
+					flex: 1 0 auto;
+					overflow-y: auto;
 				}
 				.stMainBlockContainer  {
 					padding-top: 0;
@@ -193,11 +244,15 @@ async def render_chat() -> None:
 		)
 	
 async def main():
+	print("Starting Resume Analyzer app...")
+
 	st.set_page_config(layout="wide")
 	st.title("Resume Analyzer")
 
 	await render_candidates()
 	await render_chat()
+
+	print("Resume Analyzer app rendered.")
 	
 if __name__ == "__main__":
 	asyncio.run(main())

@@ -12,4 +12,6 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "llama-index-llms-openai>=0.6.16",
     "streamlit>=1.53.1",
+    "llama-index-tools-google>=0.6.2",
+    "llama-index-tools-tavily-research>=0.4.2",
 ]
