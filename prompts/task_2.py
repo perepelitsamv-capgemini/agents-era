@@ -2,7 +2,7 @@ import asyncio
 from agent import ask_agent
 
 async def main():
-	context = """
+	LINUX_TORVALDS_STORY = """
 		Linus Torvalds has played a defining role in modern software development through his creation 
 of the Linux kernel, a foundational technology that underpins countless servers, mobile devices, 
 and embedded systems worldwide. His engineering approach emphasized transparency, modularity, 
@@ -18,11 +18,11 @@ collaboration, reliability, and open technical ecosystems.
 		**Role**: You are a technical historian and software engineering writer.
 		**Tone**: Dramatic, suspenseful, and Shakespearean.
 
-		**Context**:
-		{context}
+		**LINUX_TORVALDS_STORY**:
+		{LINUX_TORVALDS_STORY}
 		
 		**Task**: 
-		- Modify the text from the context to infuse a tone reminiscent of William Shakespeare 's style, 
+		- Modify the text LINUX_TORVALDS_STORY to infuse a tone reminiscent of William Shakespeare 's style, 
 		emphasizing dramatic and suspenseful elements in Torvalds's journey through the tech industry. 
 
 		**Constraints**:

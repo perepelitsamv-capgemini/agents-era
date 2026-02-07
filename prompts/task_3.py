@@ -2,7 +2,7 @@ import asyncio
 from agent import ask_agent
 
 async def main():
-	context = """
+	LINUX_TORVALDS_STORY = """
 		In the dawning age of digital creation, when the realm of machines was ruled by 
 fractured kingdoms of code, there arose Linus Torvalds, a quiet architect whose hands shaped 
 the fate of countless devices. With steadfast resolve, he forged the Linux kernel, a mighty 
@@ -18,11 +18,11 @@ innovation, guiding artisans and great houses alike toward shared creation and n
 	prompt = f"""
 		**Role**: You are a markdown formatter.
 
-		**Context**:
-		{context}
+		**LINUX_TORVALDS_STORY**:
+		{LINUX_TORVALDS_STORY}
 		
 		**Task**: 
-		- Convert the text from context to Markdown format.
+		- Convert the text LINUX_TORVALDS_STORY to Markdown format.
 		- Follow next structure:
 			- About Linus Torvalds
 			- Linux Kernel

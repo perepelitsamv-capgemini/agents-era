@@ -1,6 +1,4 @@
 import asyncio
-from pathlib import Path
-from llama_index.core import SimpleDirectoryReader
 from agent import ask_agent
 
 async def main():
